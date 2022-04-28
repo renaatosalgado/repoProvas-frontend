@@ -76,7 +76,7 @@ function Disciplines() {
             Adicionar
           </Button>
         </Box>
-        <TermsAccordions categories={categories} terms={terms} />
+        <TermsAccordions categories={categories} terms={terms} token={token} />
       </Box>
     </>
   );
@@ -85,9 +85,10 @@ function Disciplines() {
 interface TermsAccordionsProps {
   categories: Category[];
   terms: TestByDiscipline[];
+  token: string | null;
 }
 
-function TermsAccordions({ categories, terms }: TermsAccordionsProps) {
+function TermsAccordions({ categories, terms, token }: TermsAccordionsProps) {
   return (
     <Box sx={{ marginTop: "50px" }}>
       {terms.map((term) => (
@@ -99,6 +100,7 @@ function TermsAccordions({ categories, terms }: TermsAccordionsProps) {
             <DisciplinesAccordions
               categories={categories}
               disciplines={term.disciplines}
+              token={token}
             />
           </AccordionDetails>
         </Accordion>
@@ -110,11 +112,13 @@ function TermsAccordions({ categories, terms }: TermsAccordionsProps) {
 interface DisciplinesAccordionsProps {
   categories: Category[];
   disciplines: Discipline[];
+  token: string | null;
 }
 
 function DisciplinesAccordions({
   categories,
   disciplines,
+  token,
 }: DisciplinesAccordionsProps) {
   if (disciplines.length === 0)
     return <Typography>Nenhuma prova para esse período...</Typography>;
@@ -133,6 +137,7 @@ function DisciplinesAccordions({
             <Categories
               categories={categories}
               teachersDisciplines={discipline.teacherDisciplines}
+              token={token}
             />
           </AccordionDetails>
         </Accordion>
@@ -144,9 +149,14 @@ function DisciplinesAccordions({
 interface CategoriesProps {
   categories: Category[];
   teachersDisciplines: TeacherDisciplines[];
+  token: string | null;
 }
 
-function Categories({ categories, teachersDisciplines }: CategoriesProps) {
+function Categories({
+  categories,
+  teachersDisciplines,
+  token,
+}: CategoriesProps) {
   if (teachersDisciplines.length === 0)
     return <Typography>Nenhuma prova para essa disciplina...</Typography>;
 
@@ -157,7 +167,11 @@ function Categories({ categories, teachersDisciplines }: CategoriesProps) {
         .map((category) => (
           <Box key={category.id}>
             <Typography fontWeight="bold">{category.name}</Typography>
-            <TeachersDisciplines teachersDisciplines={teachersDisciplines} />
+            <TeachersDisciplines
+              categoryId={category.id}
+              teachersDisciplines={teachersDisciplines}
+              token={token}
+            />
           </Box>
         ))}
     </>
@@ -166,51 +180,85 @@ function Categories({ categories, teachersDisciplines }: CategoriesProps) {
 
 interface TeacherDisciplineProps {
   teachersDisciplines: TeacherDisciplines[];
+  categoryId: number;
+  token: string | null;
 }
 
 function doesCategoryHaveTests(teachersDisciplines: TeacherDisciplines[]) {
   return (category: Category) =>
     teachersDisciplines.filter((teacherDiscipline) =>
-      testOfThisCategory(teacherDiscipline, category)
+      someTestOfCategory(teacherDiscipline.tests, category.id)
     ).length > 0;
 }
 
-function testOfThisCategory(
-  teacherDiscipline: TeacherDisciplines,
-  category: Category
-) {
-  return teacherDiscipline.tests.some(
-    (test) => test.category.id === category.id
-  );
+function someTestOfCategory(tests: Test[], categoryId: number) {
+  return tests.some((test) => test.category.id === categoryId);
 }
 
-function TeachersDisciplines({ teachersDisciplines }: TeacherDisciplineProps) {
+function testOfCategory(test: Test, categoryId: number) {
+  return test.category.id === categoryId;
+}
+
+function TeachersDisciplines({
+  categoryId,
+  teachersDisciplines,
+  token,
+}: TeacherDisciplineProps) {
   const testsWithDisciplines = teachersDisciplines.map((teacherDiscipline) => ({
     tests: teacherDiscipline.tests,
     teacherName: teacherDiscipline.teacher.name,
   }));
 
-  return <Tests testsWithTeachers={testsWithDisciplines} />;
+  return (
+    <Tests
+      categoryId={categoryId}
+      testsWithTeachers={testsWithDisciplines}
+      token={token}
+    />
+  );
 }
 
 interface TestsProps {
   testsWithTeachers: { tests: Test[]; teacherName: string }[];
+  categoryId: number;
+  token: string | null;
 }
 
-function Tests({ testsWithTeachers: testsWithDisciplines }: TestsProps) {
+function Tests({
+  categoryId,
+  token,
+  testsWithTeachers: testsWithDisciplines,
+}: TestsProps) {
+  async function updateViews(testId: number) {
+    await api.updateViews(token, testId);
+  }
   return (
     <>
       {testsWithDisciplines.map((testsWithDisciplines) =>
-        testsWithDisciplines.tests.map((test) => (
-          <Typography key={test.id} color="#878787">
-            <Link
-              href={test.pdfUrl}
-              target="_blank"
-              underline="none"
-              color="inherit"
-            >{`${test.name} (${testsWithDisciplines.teacherName})`}</Link>
-          </Typography>
-        ))
+        testsWithDisciplines.tests
+          .filter((test) => testOfCategory(test, categoryId))
+          .map((test) => (
+            <Typography
+              key={test.id}
+              color="#878787"
+              onClick={() => {
+                updateViews(test.id);
+              }}
+            >
+              <Link
+                href={test.pdfUrl}
+                target="_blank"
+                underline="none"
+                color="inherit"
+              >{`${test.name} (${testsWithDisciplines.teacherName}) - ${
+                test.views === 0
+                  ? "nenhuma visualização"
+                  : test.views > 1
+                  ? `${test.views} visualizações`
+                  : `${test.views} visualização`
+              }`}</Link>
+            </Typography>
+          ))
       )}
     </>
   );

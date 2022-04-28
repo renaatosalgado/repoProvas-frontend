@@ -27,24 +27,43 @@ function Instructors() {
     TestByTeacher[]
   >([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [teacher, setTeacher] = useState({
+    name: "",
+  });
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setTeacher({ ...teacher, [e.target.name]: e.target.value });
+    console.log(teacher);
+  }
 
   useEffect(() => {
     async function loadPage() {
       if (!token) return;
 
       const { data: testsData } = await api.getTestsByTeacher(token);
-      setTeachersDisciplines(testsData.tests);
+      if (teacher.name !== "") {
+        const teachersTests = testsData.tests.filter(
+          (el) => el.teacher.name.toLowerCase().includes(teacher.name.toLowerCase())
+        );
+        console.log(teachersTests);
+        setTeachersDisciplines(teachersTests);
+      } else {
+        setTeachersDisciplines(testsData.tests);
+      }
       const { data: categoriesData } = await api.getCategories(token);
       setCategories(categoriesData.categories);
     }
     loadPage();
-  }, [token]);
+  }, [token, teacher.name]);
 
   return (
     <>
       <TextField
         sx={{ marginX: "auto", marginBottom: "25px", width: "450px" }}
         label="Pesquise por pessoa instrutora"
+        value={teacher.name}
+        name="name"
+        onChange={handleInputChange}
       />
       <Divider sx={{ marginBottom: "35px" }} />
       <Box
@@ -80,6 +99,7 @@ function Instructors() {
         <TeachersDisciplinesAccordions
           categories={categories}
           teachersDisciplines={teachersDisciplines}
+          token={token}
         />
       </Box>
     </>
@@ -89,11 +109,13 @@ function Instructors() {
 interface TeachersDisciplinesAccordionsProps {
   teachersDisciplines: TestByTeacher[];
   categories: Category[];
+  token: string | null;
 }
 
 function TeachersDisciplinesAccordions({
   categories,
   teachersDisciplines,
+  token,
 }: TeachersDisciplinesAccordionsProps) {
   const teachers = getUniqueTeachers(teachersDisciplines);
 
@@ -113,6 +135,7 @@ function TeachersDisciplinesAccordions({
                   category={category}
                   teacher={teacher}
                   teachersDisciplines={teachersDisciplines}
+                  token={token}
                 />
               ))}
           </AccordionDetails>
@@ -157,12 +180,14 @@ interface CategoriesProps {
   teachersDisciplines: TeacherDisciplines[];
   category: Category;
   teacher: string;
+  token: string | null;
 }
 
 function Categories({
   category,
   teachersDisciplines,
   teacher,
+  token,
 }: CategoriesProps) {
   return (
     <>
@@ -179,6 +204,7 @@ function Categories({
                 (test) => test.category.id === category.id
               )}
               disciplineName={teacherDiscipline.discipline.name}
+              token={token}
             />
           ))}
       </Box>
@@ -189,19 +215,35 @@ function Categories({
 interface TestsProps {
   disciplineName: string;
   tests: Test[];
+  token: string | null;
 }
 
-function Tests({ tests, disciplineName }: TestsProps) {
+function Tests({ tests, disciplineName, token }: TestsProps) {
+  async function updateViews(testId: number) {
+    await api.updateViews(token, testId);
+  }
   return (
     <>
       {tests.map((test) => (
-        <Typography key={test.id} color="#878787">
+        <Typography
+          key={test.id}
+          color="#878787"
+          onClick={() => {
+            updateViews(test.id);
+          }}
+        >
           <Link
             href={test.pdfUrl}
             target="_blank"
             underline="none"
             color="inherit"
-          >{`${test.name} (${disciplineName})`}</Link>
+          >{`${test.name} (${disciplineName}) - ${
+            test.views === 0
+              ? "nenhuma visualização"
+              : test.views > 1
+              ? `${test.views} visualizações`
+              : `${test.views} visualização`
+          } `}</Link>
         </Typography>
       ))}
     </>

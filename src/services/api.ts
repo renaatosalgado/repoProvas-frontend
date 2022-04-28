@@ -9,7 +9,7 @@ interface UserData {
   password: string;
 }
 
-function getConfig(token: string) {
+function getConfig(token: string | null) {
   return {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -59,6 +59,7 @@ export interface Test {
   name: string;
   pdfUrl: string;
   category: Category;
+  views: number;
 }
 
 export type TestByDiscipline = Term & {
@@ -70,6 +71,14 @@ export type TestByTeacher = TeacherDisciplines & {
   disciplines: Discipline[];
   tests: Test[];
 };
+
+export interface AddNewTestData {
+  title: string;
+  pdf: string;
+  category: string;
+  discipline: string;
+  teacher: string;
+}
 
 async function getTestsByDiscipline(token: string) {
   const config = getConfig(token);
@@ -92,12 +101,27 @@ async function getCategories(token: string) {
   return baseAPI.get<{ categories: Category[] }>("/categories", config);
 }
 
+async function addNewTest(token: string, newTestData: AddNewTestData) {
+  const config = getConfig(token);
+  return baseAPI.get("/tests/new", {
+    data: newTestData,
+    headers: config.headers,
+  });
+}
+
+async function updateViews(token: string | null, testId: number) {
+  const config = getConfig(token);
+  return baseAPI.put(`/tests/${testId}/update-views`, {}, config);
+}
+
 const api = {
   signUp,
   signIn,
   getTestsByDiscipline,
   getTestsByTeacher,
   getCategories,
+  addNewTest,
+  updateViews,
 };
 
 export default api;
