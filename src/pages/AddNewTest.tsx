@@ -53,7 +53,7 @@ function AddNewTest() {
     async function loadPage() {
       if (!token) return;
 
-      const { data: testsData } = await api.getTestsByDiscipline(token);
+      const { data: testsData } = await api.getTestsByDiscipline(token, "");
       setTerms(testsData.tests);
       const { data: categoriesData } = await api.getCategories(token);
       setCategories(categoriesData.categories);
@@ -91,7 +91,7 @@ function AddNewTest() {
           }}
         >
           <Button
-            variant="contained"
+            variant="outlined"
             onClick={() => navigate("/app/disciplinas")}
           >
             Disciplinas
@@ -102,7 +102,10 @@ function AddNewTest() {
           >
             Pessoa Instrutora
           </Button>
-          <Button variant="outlined" onClick={() => navigate("/app/adicionar")}>
+          <Button
+            variant="contained"
+            onClick={() => navigate("/app/adicionar")}
+          >
             Adicionar
           </Button>
         </Box>

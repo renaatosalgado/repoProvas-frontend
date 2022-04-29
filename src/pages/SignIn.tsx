@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 //eslint-disable-next-line
 import { AxiosError } from "axios";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { ReactComponent as Logo } from "../assets/logo.svg";
 import Form from "../components/Form";
@@ -54,6 +54,13 @@ function SignIn() {
     email: "",
     password: "",
   });
+  const { token } = useAuth();
+
+  useEffect(() => {
+    if(token) {
+      navigate("/app/disciplinas")
+    }
+  }, []);
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFormData({ ...formData, [e.target.name]: e.target.value });

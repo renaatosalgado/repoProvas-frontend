@@ -33,7 +33,6 @@ function Instructors() {
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setTeacher({ ...teacher, [e.target.name]: e.target.value });
-    console.log(teacher);
   }
 
   useEffect(() => {
@@ -42,11 +41,10 @@ function Instructors() {
 
       const { data: testsData } = await api.getTestsByTeacher(token);
       if (teacher.name !== "") {
-        const teachersTests = testsData.tests.filter(
-          (el) => el.teacher.name.toLowerCase().includes(teacher.name.toLowerCase())
+        const teacherTests = testsData.tests.filter((el) =>
+          el.teacher.name.toLowerCase().includes(teacher.name.toLowerCase())
         );
-        console.log(teachersTests);
-        setTeachersDisciplines(teachersTests);
+        setTeachersDisciplines(teacherTests);
       } else {
         setTeachersDisciplines(testsData.tests);
       }
@@ -120,7 +118,7 @@ function TeachersDisciplinesAccordions({
   const teachers = getUniqueTeachers(teachersDisciplines);
 
   return (
-    <Box sx={{ marginTop: "50px" }}>
+    <Box sx={{ marginTop: "50px", marginBottom:"50px" }}>
       {teachers.map((teacher) => (
         <Accordion sx={{ backgroundColor: "#FFF" }} key={teacher}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>

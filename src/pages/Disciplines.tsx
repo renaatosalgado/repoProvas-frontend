@@ -26,24 +26,39 @@ function Disciplines() {
   const { token } = useAuth();
   const [terms, setTerms] = useState<TestByDiscipline[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [discipline, setDiscipline] = useState({
+    name: "",
+  });
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setDiscipline({ ...discipline, [e.target.name]: e.target.value });
+    console.log(discipline);
+  }
 
   useEffect(() => {
     async function loadPage() {
       if (!token) return;
 
-      const { data: testsData } = await api.getTestsByDiscipline(token);
-      setTerms(testsData.tests);
+      const { data: testsData } = await api.getTestsByDiscipline(
+        token,
+        discipline.name
+      );
+      const validTests = testsData.tests.filter(el => el.disciplines.length > 0)
+      setTerms(validTests);
       const { data: categoriesData } = await api.getCategories(token);
       setCategories(categoriesData.categories);
     }
     loadPage();
-  }, [token]);
+  }, [token, discipline.name]);
 
   return (
     <>
       <TextField
         sx={{ marginX: "auto", marginBottom: "25px", width: "450px" }}
         label="Pesquise por disciplina"
+        value={discipline.name}
+        name="name"
+        onChange={handleInputChange}
       />
       <Divider sx={{ marginBottom: "35px" }} />
       <Box
@@ -90,7 +105,7 @@ interface TermsAccordionsProps {
 
 function TermsAccordions({ categories, terms, token }: TermsAccordionsProps) {
   return (
-    <Box sx={{ marginTop: "50px" }}>
+    <Box sx={{ marginTop: "50px", marginBottom: "50px" }}>
       {terms.map((term) => (
         <Accordion sx={{ backgroundColor: "#FFF" }} key={term.id}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>

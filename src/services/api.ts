@@ -80,10 +80,10 @@ export interface AddNewTestData {
   teacher: string;
 }
 
-async function getTestsByDiscipline(token: string) {
+async function getTestsByDiscipline(token: string, disciplineName: string) {
   const config = getConfig(token);
   return baseAPI.get<{ tests: TestByDiscipline[] }>(
-    "/tests?groupBy=disciplines",
+    `/tests?groupBy=disciplines&disciplineName=${disciplineName}`,
     config
   );
 }
