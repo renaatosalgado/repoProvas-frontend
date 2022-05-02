@@ -24,7 +24,7 @@ import api, {
   TestByDiscipline,
   TestByTeacher,
 } from "../services/api";
-import { matches } from "lodash";
+//import getTeachers from "../components/TeachersOptions";
 
 const styles = {
   input: { marginBottom: "16px", width: "100%" },
@@ -129,17 +129,14 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
   const [formData, setFormData] = useState<AddNewTestData>({
     title: "",
     pdf: "",
-    category: "",
-    discipline: "",
+    category: null,
+    discipline: null,
     teacher: "",
   });
   const { setMessage } = useAlert();
   const { token } = useAuth();
-  const [matchingTeachers, setMatchingTeachers] = useState<TestByTeacher[]>([]);
-
+  const teacherOptions: any[] = ["um", "outro", "mais um e outro"];
   const rawDisciplines: any[] = getOnlyRawDisciplines();
-
-  //getMatchingTeachers();
 
   function getOnlyRawDisciplines() {
     const rawDisciplines: any[] = [];
@@ -150,19 +147,17 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
     return rawDisciplines;
   }
 
-  // function getMatchingTeachers() {
-  //   if (formData.discipline) {
-  //     const matches = teachers.filter(
-  //       (el) => el.discipline.name === formData.discipline
-  //     );
-
-  //     setMatchingTeachers(matches);
-  //     console.log(matches);
-  //   }
-  // }
-
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+
+    api
+      .getTeacherByDiscipline(token, formData.discipline as number)
+      .then((res) => {
+        res.data.teachers.forEach((el: { teacher: { name: any } }) =>
+          teacherOptions.push(el.teacher)
+        );
+      });
+    console.log({ teacherOptions });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -226,14 +221,14 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
         <TextField
           sx={{ width: "100%", marginBottom: "16px" }}
           select
-          label="Categoria"
-          name="category"
-          value={formData.category}
+          label="Disciplina"
+          name="discipline"
+          value={formData.discipline}
           onChange={handleInputChange}
         >
-          {categories.map((category) => (
-            <MenuItem key={category.id} value={category.name}>
-              {category.name}
+          {rawDisciplines.map((discipline) => (
+            <MenuItem key={discipline.id} value={discipline.id}>
+              {discipline.name}
             </MenuItem>
           ))}
         </TextField>
@@ -241,14 +236,14 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
         <TextField
           sx={{ width: "100%", marginBottom: "16px" }}
           select
-          label="Disciplina"
-          name="discipline"
-          value={formData.discipline}
+          label="Categoria"
+          name="category"
+          value={formData.category}
           onChange={handleInputChange}
         >
-          {rawDisciplines.map((discipline) => (
-            <MenuItem key={discipline.id} value={discipline.name}>
-              {discipline.name}
+          {categories.map((category) => (
+            <MenuItem key={category.id} value={category.id}>
+              {category.name}
             </MenuItem>
           ))}
         </TextField>
@@ -261,19 +256,23 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
           value={formData.teacher}
           onChange={handleInputChange}
         >
-          {matchingTeachers.map((teacher) => (
-            <MenuItem key={teacher.teacher.id} value={teacher.teacher.name}>
-              {teacher.teacher.name}
+          {teacherOptions.map((teacher) => (
+            <MenuItem key={teacher.id} value={teacher.id}>
+              {teacher.name}
             </MenuItem>
           ))}
-        </TextField> */}
-        {/* <Autocomplete
-          disablePortal
+        </TextField>
+
+        <Autocomplete
+          disablePortal={false}
           id="combo-box-demo"
-          options={matchingTeachers}
-          sx={{ width: 300 }}
-          renderInput={(params) => <TextField {...params} label="Movie" />}
+          options={teacherOptions}
+          sx={{ width: "100%" }}
+          renderInput={(params) => (
+            <TextField {...params} label="Pessoa Instrutora" />
+          )}
         /> */}
+
         <Button
           variant="contained"
           type="submit"

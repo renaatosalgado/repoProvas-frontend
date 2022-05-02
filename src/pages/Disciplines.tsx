@@ -32,7 +32,6 @@ function Disciplines() {
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setDiscipline({ ...discipline, [e.target.name]: e.target.value });
-    console.log(discipline);
   }
 
   useEffect(() => {

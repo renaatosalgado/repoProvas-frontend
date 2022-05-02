@@ -75,8 +75,8 @@ export type TestByTeacher = TeacherDisciplines & {
 export interface AddNewTestData {
   title: string;
   pdf: string;
-  category: string;
-  discipline: string;
+  category: number | null;
+  discipline: number | null;
   teacher: string;
 }
 
@@ -103,7 +103,7 @@ async function getCategories(token: string) {
 
 async function addNewTest(token: string, newTestData: AddNewTestData) {
   const config = getConfig(token);
-  return baseAPI.get("/tests/new", {
+  return baseAPI.post("/tests/new", {
     data: newTestData,
     headers: config.headers,
   });
@@ -114,6 +114,14 @@ async function updateViews(token: string | null, testId: number) {
   return baseAPI.put(`/tests/${testId}/update-views`, {}, config);
 }
 
+async function getTeacherByDiscipline(
+  token: string | null,
+  disciplineId: number
+) {
+  const config = getConfig(token);
+  return baseAPI.get(`/teachers/disciplines/${disciplineId}`, config);
+}
+
 const api = {
   signUp,
   signIn,
@@ -122,6 +130,7 @@ const api = {
   getCategories,
   addNewTest,
   updateViews,
+  getTeacherByDiscipline,
 };
 
 export default api;
