@@ -74,10 +74,10 @@ export type TestByTeacher = TeacherDisciplines & {
 
 export interface AddNewTestData {
   title: string;
-  pdf: string;
+  pdfUrl: string;
   category: number | null;
   discipline: number | null;
-  teacher: string;
+  teacher: number | null;
 }
 
 async function getTestsByDiscipline(token: string, disciplineName: string) {
@@ -103,10 +103,7 @@ async function getCategories(token: string) {
 
 async function addNewTest(token: string, newTestData: AddNewTestData) {
   const config = getConfig(token);
-  return baseAPI.post("/tests/new", {
-    data: newTestData,
-    headers: config.headers,
-  });
+  return baseAPI.post("/tests/add-new", newTestData, config);
 }
 
 async function updateViews(token: string | null, testId: number) {

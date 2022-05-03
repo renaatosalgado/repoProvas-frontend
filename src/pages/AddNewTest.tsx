@@ -1,5 +1,4 @@
 import {
-  Autocomplete,
   Box,
   Button,
   Divider,
@@ -18,13 +17,8 @@ import useAlert from "../hooks/useAlert";
 import api, {
   AddNewTestData,
   Category,
-  Discipline,
-  TeacherDisciplines,
-  Test,
   TestByDiscipline,
-  TestByTeacher,
 } from "../services/api";
-//import getTeachers from "../components/TeachersOptions";
 
 const styles = {
   input: { marginBottom: "16px", width: "100%" },
@@ -47,7 +41,6 @@ function AddNewTest() {
   const { token } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [terms, setTerms] = useState<TestByDiscipline[]>([]);
-  const [teachers, setTeachers] = useState<TestByTeacher[]>([]);
 
   useEffect(() => {
     async function loadPage() {
@@ -57,8 +50,6 @@ function AddNewTest() {
       setTerms(testsData.tests);
       const { data: categoriesData } = await api.getCategories(token);
       setCategories(categoriesData.categories);
-      const { data: teachersData } = await api.getTestsByTeacher(token);
-      setTeachers(teachersData.tests);
     }
     loadPage();
   }, [token]);
@@ -109,11 +100,7 @@ function AddNewTest() {
             Adicionar
           </Button>
         </Box>
-        <NewTestForm
-          categories={categories}
-          terms={terms}
-          teachers={teachers}
-        />
+        <NewTestForm categories={categories} terms={terms} />
       </Box>
     </>
   );
@@ -122,21 +109,22 @@ function AddNewTest() {
 interface NewTestFormProps {
   categories: Category[];
   terms: TestByDiscipline[];
-  teachers: TestByTeacher[];
 }
 
-function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
+function NewTestForm({ categories, terms }: NewTestFormProps) {
   const [formData, setFormData] = useState<AddNewTestData>({
     title: "",
-    pdf: "",
+    pdfUrl: "",
     category: null,
     discipline: null,
-    teacher: "",
+    teacher: null,
   });
   const { setMessage } = useAlert();
   const { token } = useAuth();
-  const teacherOptions: any[] = ["um", "outro", "mais um e outro"];
+  const [teacherOptions, setTeacherOptions] = useState<any[]>([]);
+  const rawTeacherOptions: any[] = [];
   const rawDisciplines: any[] = getOnlyRawDisciplines();
+  const nagivate = useNavigate();
 
   function getOnlyRawDisciplines() {
     const rawDisciplines: any[] = [];
@@ -154,10 +142,12 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
       .getTeacherByDiscipline(token, formData.discipline as number)
       .then((res) => {
         res.data.teachers.forEach((el: { teacher: { name: any } }) =>
-          teacherOptions.push(el.teacher)
+          rawTeacherOptions.push(el.teacher)
         );
+      })
+      .finally(() => {
+        setTeacherOptions(rawTeacherOptions);
       });
-    console.log({ teacherOptions });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -166,7 +156,7 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
 
     if (
       !formData?.title ||
-      !formData?.pdf ||
+      !formData?.pdfUrl ||
       !formData?.discipline ||
       !formData?.teacher ||
       !formData?.category
@@ -176,13 +166,16 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
     }
 
     try {
+      console.log(formData)
       await api.addNewTest(token as string, formData);
+      nagivate("/app/disciplinas");
     } catch (error: Error | AxiosError | any) {
       if (error.response) {
         setMessage({
           type: "error",
           text: error.response.data,
         });
+        nagivate("/app/adicionar");
         return;
       }
 
@@ -190,6 +183,7 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
         type: "error",
         text: "Erro, tente novamente em alguns segundos!",
       });
+      nagivate("/app/adicionar");
     }
   }
 
@@ -209,13 +203,13 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
         />
 
         <TextField
-          name="pdf"
+          name="pdfUrl"
           sx={styles.input}
           label="PDF da Prova"
           type="text"
           variant="outlined"
           onChange={handleInputChange}
-          value={formData.pdf}
+          value={formData.pdfUrl}
         />
 
         <TextField
@@ -248,7 +242,7 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
           ))}
         </TextField>
 
-        {/* <TextField
+        <TextField
           sx={{ width: "100%", marginBottom: "16px" }}
           select
           label="Pessoa Instrutora"
@@ -262,16 +256,6 @@ function NewTestForm({ categories, terms, teachers }: NewTestFormProps) {
             </MenuItem>
           ))}
         </TextField>
-
-        <Autocomplete
-          disablePortal={false}
-          id="combo-box-demo"
-          options={teacherOptions}
-          sx={{ width: "100%" }}
-          renderInput={(params) => (
-            <TextField {...params} label="Pessoa Instrutora" />
-          )}
-        /> */}
 
         <Button
           variant="contained"
